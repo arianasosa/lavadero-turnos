@@ -5,56 +5,74 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-6 antialiased">
-    <div class="max-w-5xl mx-auto space-y-8">
+    <div class="max-w-6xl mx-auto space-y-8">
         <div class="flex justify-between items-center border-b border-white/10 pb-4">
             <h1 class="text-2xl font-black text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text">ADMINISTRACIÓN GENERAL</h1>
             <a href="/admin/logout" class="text-xs font-bold border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10">Cerrar Sesión</a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- COLUMNA PRECIOS (1/3) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="bg-slate-900 border border-white/5 p-5 rounded-2xl h-fit space-y-4">
-                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Modificar Lista de Precios</h3>
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Lista de Servicios</h3>
                 <div class="space-y-3">
                     {% for id, nombre, precio in servicios %}
-                    <form action="/admin/actualizar_precio" method="POST" class="flex items-center justify-between p-2.5 bg-white/5 rounded-xl border border-white/5">
-                        <input type="hidden" name="id" value="{{ id }}">
-                        <span class="text-xs text-slate-200 font-medium truncate max-w-[140px]">{{ nombre }}</span>
-                        <div class="flex items-center space-x-1.5">
-                            <span class="text-xs text-slate-500">$</span>
-                            <input type="number" name="precio" value="{{ precio }}" class="w-20 bg-slate-800 text-center border border-white/10 p-1 rounded-md text-xs font-bold text-blue-400 focus:outline-none focus:border-blue-500">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold p-1 rounded text-[10px]">💾</button>
+                    <div class="p-3 bg-white/5 rounded-xl border border-white/5 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-200 font-bold truncate max-w-[160px]">{{ nombre }}</span>
+                            
+                            <form action="/admin/eliminar_servicio" method="POST" onsubmit="return confirm('¿Seguro que querés eliminar el servicio «{{ nombre }}»?');" class="inline">
+                                <input type="hidden" name="id" value="{{ id }}">
+                                <button type="submit" class="text-red-400 hover:text-red-300 font-bold text-xs p-1">❌</button>
+                            </form>
                         </div>
-                    </form>
+                        
+                        <form action="/admin/actualizar_precio" method="POST" class="flex items-center justify-between pt-1 border-t border-white/5">
+                            <input type="hidden" name="id" value="{{ id }}">
+                            <span class="text-[11px] text-slate-500">Precio actual:</span>
+                            <div class="flex items-center space-x-1.5">
+                                <span class="text-xs text-slate-500">$</span>
+                                <input type="number" name="precio" value="{{ precio }}" class="w-20 bg-slate-800 text-center border border-white/10 p-1 rounded-md text-xs font-bold text-blue-400 focus:outline-none focus:border-blue-500">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold p-1 rounded text-[10px]" title="Guardar Precio">💾</button>
+                            </div>
+                        </form>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- COLUMNA AGENDA DE TURNOS (2/3) -->
-            <div class="md:col-span-2 bg-slate-900 border border-white/5 p-5 rounded-2xl space-y-4">
+            <div class="lg:col-span-2 bg-slate-900 border border-white/5 p-5 rounded-2xl space-y-4">
                 <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Historial y Próximos Turnos</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-300">
                         <thead class="bg-white/5 text-slate-400 uppercase font-bold text-[10px] tracking-wider">
                             <tr>
-                                <th class="p-3 rounded-l-lg">Fecha / Hora</th>
+                                <th class="p-3 rounded-l-lg">Cliente</th>
+                                <th class="p-3">Fecha / Hora</th>
                                 <th class="p-3">Sucursal</th>
                                 <th class="p-3">Vehículo</th>
                                 <th class="p-3">Servicios</th>
-                                <th class="p-3 rounded-r-lg text-right">Total</th>
+                                <th class="p-3 text-right">Total</th>
+                                <th class="p-3 rounded-r-lg text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/5">
-                            {% for sucursal, servicios, vehiculo, fecha, hora, total in turnos %}
-                            <tr class="hover:bg-white/20 transition-colors">
+                            {% for id, cliente, sucursal, servicios, vehiculo, fecha, hora, total in turnos %}
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-3 font-bold text-white">{{ cliente }}</td>
                                 <td class="p-3 font-medium text-slate-200">{{ fecha }} - <span class="text-blue-400">{{ hora }}</span></td>
                                 <td class="p-3 text-slate-400">{{ sucursal }}</td>
                                 <td class="p-3"><span class="px-2 py-0.5 bg-slate-800 rounded border border-white/5 text-[10px]">{{ vehiculo }}</span></td>
-                                <td class="p-3 text-slate-300 max-w-[180px] truncate" title="{{ servicios }}">{{ servicios }}</td>
+                                <td class="p-3 text-slate-300 max-w-[120px] truncate" title="{{ servicios }}">{{ servicios }}</td>
                                 <td class="p-3 text-right text-emerald-400 font-bold">${{ "{:,}".format(total).replace(",", ".") }}</td>
+                                <td class="p-3 text-center">
+                                    <form action="/admin/eliminar_turno" method="POST" onsubmit="return confirm('¿Estás seguro de que querés borrar este turno de la agenda?');" class="inline">
+                                        <input type="hidden" name="id" value="{{ id }}">
+                                        <button type="submit" class="text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded text-[11px] font-bold">Borrar</button>
+                                    </form>
+                                </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="5" class="text-center p-6 text-slate-500 italic">No se registraron turnos todavía.</td></tr>
+                            <tr><td colspan="7" class="text-center p-6 text-slate-500 italic">No se registraron turnos todavía.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

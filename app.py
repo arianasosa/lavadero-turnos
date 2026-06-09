@@ -4,16 +4,15 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_para_sesiones_lavadero'
 
-# Contraseña para el panel de administración
 ADMIN_PASSWORD = "admin123"
 
 def init_db():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
-    # Tabla de turnos
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS turnos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente TEXT,
             sucursal TEXT,
             servicios TEXT,
             tipo_vehiculo TEXT,
@@ -22,7 +21,6 @@ def init_db():
             total INTEGER
         )
     ''')
-    # Tabla de servicios y precios
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS servicios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +29,6 @@ def init_db():
         )
     ''')
     
-    # Insertar servicios iniciales si la tabla está vacía
     cursor.execute("SELECT COUNT(*) FROM servicios")
     if cursor.fetchone()[0] == 0:
         servicios_iniciales = [
@@ -53,7 +50,6 @@ HORARIOS_TOTALES = ["09:00am", "10:00am", "13:30pm", "16:30pm", "17:30pm", "18:3
 def home():
     return render_template('index.html')
 
-# Endpoint para que el HTML sepa qué servicios y precios mostrar
 @app.route('/get_servicios', methods=['GET'])
 def get_servicios():
     conn = sqlite3.connect('turnos.db')
@@ -84,9 +80,9 @@ def confirmar_turno():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO turnos (sucursal, servicios, tipo_vehiculo, fecha, hora, total)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (data['sucursal'], ", ".join(data['servicios']), data['tipo_vehiculo'], data['fecha'], data['hora'], data['total']))
+        INSERT INTO turnos (cliente, sucursal, servicios, tipo_vehiculo, fecha, hora, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (data['cliente'], data['sucursal'], ", ".join(data['servicios']), data['tipo_vehiculo'], data['fecha'], data['hora'], data['total']))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -115,11 +111,10 @@ def admin_panel():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
     
-    # Traer todos los turnos agendados ordenados por fecha
-    cursor.execute("SELECT sucursal, servicios, tipo_vehiculo, fecha, hora, total FROM turnos ORDER BY fecha DESC, hora DESC")
+    # Traemos el ID de los turnos para poder eliminarlos despues
+    cursor.execute("SELECT id, cliente, sucursal, servicios, tipo_vehiculo, fecha, hora, total FROM turnos ORDER BY fecha DESC, hora DESC")
     turnos = cursor.fetchall()
     
-    # Traer los servicios para poder editarlos
     cursor.execute("SELECT id, nombre, precio FROM servicios")
     servicios = cursor.fetchall()
     
@@ -140,6 +135,34 @@ def actualizar_precio():
     conn.commit()
     conn.close()
     
+    return redirect(url_for('admin_panel'))
+
+# ACCIÓN NUEVA: Eliminar un servicio del catalogo
+@app.route('/admin/eliminar_servicio', methods=['POST'])
+def eliminar_servicio():
+    if not session.get('admin_logeado'):
+        return jsonify({"status": "error"}), 403
+        
+    id_servicio = request.form.get('id')
+    conn = sqlite3.connect('turnos.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM servicios WHERE id = ?", (id_servicio,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin_panel'))
+
+# ACCIÓN NUEVA: Eliminar un turno de la agenda
+@app.route('/admin/eliminar_turno', methods=['POST'])
+def eliminar_turno():
+    if not session.get('admin_logeado'):
+        return jsonify({"status": "error"}), 403
+        
+    id_turno = request.form.get('id')
+    conn = sqlite3.connect('turnos.db')
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM turnos WHERE id = ?", (id_turno,))
+    conn.commit()
+    conn.close()
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/logout')
