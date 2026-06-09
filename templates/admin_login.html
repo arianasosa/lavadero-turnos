@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Login Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-white/10 p-6 rounded-2xl shadow-xl">
+        <h2 class="text-xl font-bold mb-4 text-center">Panel de Control Lavadero</h2>
+        <form method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs text-slate-400 font-bold uppercase mb-2">Contraseña de acceso</label>
+                <input type="password" name="password" class="w-full bg-slate-800 border border-white/10 p-3 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            {% if error %}<p class="text-red-400 text-xs font-semibold">{{ error }}</p>{% endif %}
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-sm font-bold">Ingresar</button>
+        </form>
+    </div>
+</body>
+</html>
