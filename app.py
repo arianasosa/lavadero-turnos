@@ -9,7 +9,6 @@ ADMIN_PASSWORD = "admin123"
 def init_db():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
-    # Agregamos la columna 'patente' a la estructura
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS turnos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,11 +45,15 @@ def init_db():
     conn.commit()
     conn.close()
 
+init_db()
+
 HORARIOS_TOTALES = ["09:00am", "10:00am", "13:30pm", "16:30pm", "17:30pm", "18:30pm"]
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
+# (Todo el resto de tus rutas @app.route de abajo quedan exactamente igual a como las tenías...)
 
 @app.route('/get_servicios', methods=['GET'])
 def get_servicios():
