@@ -9,10 +9,12 @@ ADMIN_PASSWORD = "admin123"
 def init_db():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
+    # Agregamos la columna 'patente' a la estructura
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS turnos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente TEXT,
+            patente TEXT,
             sucursal TEXT,
             servicios TEXT,
             tipo_vehiculo TEXT,
@@ -80,9 +82,9 @@ def confirmar_turno():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO turnos (cliente, sucursal, servicios, tipo_vehiculo, fecha, hora, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (data['cliente'], data['sucursal'], ", ".join(data['servicios']), data['tipo_vehiculo'], data['fecha'], data['hora'], data['total']))
+        INSERT INTO turnos (cliente, patente, sucursal, servicios, tipo_vehiculo, fecha, hora, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (data['cliente'], data['patente'], data['sucursal'], ", ".join(data['servicios']), data['tipo_vehiculo'], data['fecha'], data['hora'], data['total']))
     conn.commit()
     conn.close()
     return jsonify({"status": "success"})
@@ -111,8 +113,8 @@ def admin_panel():
     conn = sqlite3.connect('turnos.db')
     cursor = conn.cursor()
     
-    # Traemos el ID de los turnos para poder eliminarlos despues
-    cursor.execute("SELECT id, cliente, sucursal, servicios, tipo_vehiculo, fecha, hora, total FROM turnos ORDER BY fecha DESC, hora DESC")
+    # Traemos la columna patente para mostrarla en el historial
+    cursor.execute("SELECT id, cliente, patente, sucursal, servicios, tipo_vehiculo, fecha, hora, total FROM turnos ORDER BY fecha DESC, hora DESC")
     turnos = cursor.fetchall()
     
     cursor.execute("SELECT id, nombre, precio FROM servicios")
@@ -120,6 +122,27 @@ def admin_panel():
     
     conn.close()
     return render_template('admin_panel.html', turnos=turnos, servicios=servicios)
+
+# ACCIÓN: Agregar un servicio nuevo al catálogo
+@app.route('/admin/agregar_servicio', methods=['POST'])
+def agregar_servicio():
+    if not session.get('admin_logeado'):
+        return jsonify({"status": "error"}), 403
+        
+    nombre = request.form.get('nombre')
+    precio = request.form.get('precio')
+    
+    if nombre and precio:
+        conn = sqlite3.connect('turnos.db')
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO servicios (nombre, precio) VALUES (?, ?)", (nombre, int(precio)))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            pass # Si ya existe un servicio con ese nombre, no hace nada
+        conn.close()
+        
+    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/actualizar_precio', methods=['POST'])
 def actualizar_precio():
@@ -137,7 +160,6 @@ def actualizar_precio():
     
     return redirect(url_for('admin_panel'))
 
-# ACCIÓN NUEVA: Eliminar un servicio del catalogo
 @app.route('/admin/eliminar_servicio', methods=['POST'])
 def eliminar_servicio():
     if not session.get('admin_logeado'):
@@ -151,7 +173,6 @@ def eliminar_servicio():
     conn.close()
     return redirect(url_for('admin_panel'))
 
-# ACCIÓN NUEVA: Eliminar un turno de la agenda
 @app.route('/admin/eliminar_turno', methods=['POST'])
 def eliminar_turno():
     if not session.get('admin_logeado'):
